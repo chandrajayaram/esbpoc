@@ -1,0 +1,116 @@
+<routes xmlns="http://camel.apache.org/schema/spring">
+
+    <!--
+    ESB utility transport route to send via HTTP
+
+    The destination URL is pulled from exchange header header.caiso.esb.service.app.config.destination
+    -->
+    <route id="caiso.esb.router.transport.http">
+        <from uri="direct:caiso.esb.router.transport.http"/>
+        <transacted/>
+        <log loggingLevel="INFO" logName="caiso.esb.router.transport.http"
+             message="Sending via HTTP to ${header.caiso.esb.service.app.config.destination}"/>
+        <!-- uncomment to let IDE have breakpoint in CAMEL route and examine exchange -->
+        <!--<bean ref="camelDebugBean" method="noOp"/>-->
+        <!--<bean ref="camelDebugBean" method="simulateDelay(30)"/>-->
+         <!--<bean ref="camelDebugBean" method="simulateCrash(3)"/>-->
+        <!--<bean ref="camelDebugBean" method="exception"/>-->
+
+        <!-- send exchange over http transport, with retries if necessary -->
+        <bean ref="transportService" method="httpTransport"/>
+        <!-- audit/log that we've finished delivery -->
+        <bean ref="auditBean" method="logTime('caiso.esb.audit.router.transport.http.out')"/>
+
+        <log loggingLevel="INFO" logName="caiso.esb.router.transport.http"
+             message="Finished HTTP delivery of ${header.caiso.esb.SERVICE_NAME} to ${header.caiso.esb.service.app.config.destination}"/>
+        <bean ref="routerMetrics" method="incReceivesSentCount"/>
+        <bean ref="routerMetrics" method="completeFlow"/>
+
+        <!--
+        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        Exception handling
+        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        -->
+        <onException>
+            <exception>caiso.esb.exceptions.ExhaustedRetriesException</exception>
+            <log loggingLevel="ERROR" logName="caiso.esb.router.transport.http"
+                 message="Maximum retries reached for ${headers.soapaction}"/>
+
+            <bean ref="auditBean"
+                  method="logTime('ERROR in caiso.esb.router.transport.http!! - sending to exception queue')"/>
+
+            <!--
+            route to error queue
+            -->
+            <to uri="activemq:queue:exception.caiso.esb.router.transport.http.ExhaustedRetriesException"/>
+        </onException>
+        <onException useOriginalMessage="true">
+            <exception>java.lang.Throwable</exception>
+            <log loggingLevel="ERROR" logName="caiso.esb.router.transport.http"
+                 message="SOAPAction: ${headers.soapaction} : \n${body}"/>
+
+            <redeliveryPolicy maximumRedeliveries="2"/>
+            <!-- quick & dirty way to copy msg in new, non-transacted thread w/ original msg body -->
+            <wireTap uri="activemq:queue:exception.caiso.esb.router.transport.http.Throwable"/>
+        </onException>
+
+    </route>
+
+    <!--
+    ESB utility transport route to send via JMS to a topic
+
+    The destination Topic name is pulled from exchange header header.caiso.esb.service.app.config.destination
+    -->
+    <!-- bs3: untested JMS transport -->
+    <route id="caiso.esb.router.transport.jms.topic">
+        <from uri="direct:caiso.esb.router.transport.jms.topic"/>
+        <transacted/>
+        <log loggingLevel="INFO" logName="caiso.esb.router.transport.jms.topic"
+             message="Sending via JMS Topic to ${header.caiso.esb.service.app.config.destination}"/>
+        <!-- uncomment to let IDE have breakpoint in CAMEL route and examine exchange -->
+        <!--<bean ref="camelDebugBean" method="noOp"/>-->
+        <!--<bean ref="camelDebugBean" method="simulateDelay(30)"/>-->
+        <!--<bean ref="camelDebugBean" method="exception"/>-->
+
+        <!-- send exchange over JMS transport, with retries if necessary -->
+        <bean ref="transportService" method="jmsTransport"/>
+        <!-- audit/log that we've finished delivery -->
+        <bean ref="auditBean" method="logTime('caiso.esb.audit.router.transport.jms.out')"/>
+
+        <log loggingLevel="INFO" logName="caiso.esb.router.transport.jms.topic"
+             message="Finished JMS delivery of ${header.caiso.esb.SERVICE_NAME} to ${header.caiso.esb.service.app.config.destination}"/>
+        <bean ref="routerMetrics" method="incReceivesSentCount"/>
+        <bean ref="routerMetrics" method="completeFlow"/>
+
+        <!--
+        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        Exception handling
+        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        -->
+        <onException>
+            <exception>java.lang.Throwable</exception>
+            <log loggingLevel="ERROR" logName="caiso.esb.router.transport.jms.topic"
+                 message="Exception reached for ${headers.soapaction}"/>
+
+            <bean ref="auditBean"
+                  method="logTime('ERROR in caiso.esb.router.transport.jms.topic!! - sending to exception queue')"/>
+
+            <!--
+            route to error queue
+            -->
+            <to uri="activemq:queue:exception.caiso.esb.router.transport.jms.topic.Throwable"/>
+        </onException>
+        <onException useOriginalMessage="true">
+            <exception>java.lang.Throwable</exception>
+            <log loggingLevel="ERROR" logName="caiso.esb.router.transport.jms.topic"
+                 message="SOAPAction: ${headers.soapaction} : \n${body}"/>
+
+            <redeliveryPolicy maximumRedeliveries="2"/>
+            <!-- quick & dirty way to copy msg in new, non-transacted thread w/ original msg body -->
+            <wireTap uri="activemq:queue:exception.caiso.esb.router.transport.jms.topic.Throwable"/>
+        </onException>
+
+    </route>
+
+</routes>
+

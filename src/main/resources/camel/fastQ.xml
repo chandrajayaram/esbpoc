@@ -1,0 +1,64 @@
+<routes xmlns="http://camel.apache.org/schema/spring">
+
+    <!--
+    Route for unordered messages being sent to transport.
+
+    Note: This queue is distributed (via network-of-brokers)
+    -->
+    <route id="caiso.esb.router.fastQ">
+        <from uri="activemq:caiso.esb.fastQ?concurrentConsumers={{activemq_fastQ_concurrentConsumers}}"/>
+        <transacted/>
+        <log loggingLevel="DEBUG" logName="caiso.esb.router.fastQ"
+             message="FastQ processing ${header.caiso.esb.SERVICE_NAME}"/>
+        <!-- uncomment to let IDE have breakpoint in CAMEL route and examine exchange -->
+        <!--<bean ref="camelDebugBean" method="noOp"/>-->
+        <!--<bean ref="camelDebugBean" method="simulateDelay(30)"/>-->
+        <!--<bean ref="camelDebugBean" method="simulateCrash(3)"/>-->
+        <!--<bean ref="camelDebugBean" method="exception"/>-->
+
+        <bean ref="auditBean" method="logTime('caiso.esb.audit.router.fastQ.out')"/>
+
+        <!-- translate broadcast msg to a receive msg -->
+        <bean ref="broadcastToReceiveTranslator" method="translate"/>
+
+        <choice>
+            <when>
+                <simple>${header.caiso.esb.service.app.config.transport} == 'HTTP'</simple>
+
+                <bean ref="auditBean" method="logTime('caiso.esb.audit.router.transport.http.in')"/>
+
+                <to uri="direct:caiso.esb.router.transport.http"/>
+            </when>
+            <when>
+                <simple>${header.caiso.esb.service.app.config.transport} == 'JMS'</simple>
+
+                <bean ref="auditBean" method="logTime('caiso.esb.audit.router.transport.jms.in')"/>
+
+                <wireTap uri="direct:caiso.esb.router.transport.jms.topic"/>
+            </when>
+            <otherwise>
+                <log loggingLevel="ERROR" logName="caiso.esb.router.fastQ"
+                     message="Error: Unhandled transport type: ${header.caiso.esb.service.app.config.transport} "/>
+                <throwException exceptionType="java.lang.IllegalArgumentException"
+                                message="Unhandled transport: ${header.caiso.esb.service.app.config.transport}"/>
+            </otherwise>
+        </choice>
+
+        <!--
+        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        Exception handling
+        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        -->
+        <onException useOriginalMessage="true">
+            <exception>java.lang.Throwable</exception>
+            <log loggingLevel="ERROR" logName="caiso.esb.router.fastQ"
+                 message="SOAPAction: ${headers.soapaction} : \n${body}"/>
+
+            <redeliveryPolicy maximumRedeliveries="2"/>
+            <to uri="activemq:queue:exception.caiso.esb.router.fastQ.Throwable"/>
+        </onException>
+
+    </route>
+
+</routes>
+

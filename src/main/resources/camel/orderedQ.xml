@@ -1,0 +1,67 @@
+<routes xmlns="http://camel.apache.org/schema/spring">
+    <!--
+    Ordered message processing route.  Special header (see: http://activemq.apache.org/message-groups.html) set on
+    all messages, so the consumer of this queue, will be the only consumer (for that serviceName).  This ensures an
+    ordered message processing.  This queue is not networked (as in network of brokers) since that too breaks the
+    guarantee of message groups and exclusive consumer.
+
+    NOTE: because fastQ is part of Network Of Brokers, we can't use that queue and need this ordered queue
+    -->
+    <route id="caiso.esb.router.orderedQ">
+        <!--<from uri="activemq:queue:caiso.esb.orderedQ?concurrentConsumers=1&amp;transacted=true"/>-->
+        <from uri="activemq:queue:caiso.esb.orderedQ?concurrentConsumers={{activemq_orderedQ_concurrentConsumers}}"/>
+        <transacted/>
+        <log loggingLevel="DEBUG" logName="caiso.esb.router.orderedQ"
+             message="OrderedQ processing ${header.caiso.esb.SERVICE_NAME} over ${header.caiso.esb.service.app.config.transport}"/>
+        <!-- uncomment to let IDE have breakpoint in CAMEL route and examine exchange -->
+        <!--<bean ref="camelDebugBean" method="noOp"/>-->
+        <!--<bean ref="camelDebugBean" method="simulateDelay(30)"/>-->
+        <!--<bean ref="camelDebugBean" method="simulateCrash(3)"/>-->
+        <!--<bean ref="camelDebugBean" method="exception"/>-->
+
+        <bean ref="auditBean" method="logTime('caiso.esb.audit.router.orderedQ.out')"/>
+
+        <!-- translate broadcast msg to a receive msg -->
+        <bean ref="broadcastToReceiveTranslator" method="translate"/>
+
+        <choice>
+            <when>
+                <simple>${header.caiso.esb.service.app.config.transport} == 'HTTP'</simple>
+
+                <bean ref="auditBean" method="logTime('caiso.esb.audit.router.transport.http.in')"/>
+
+                <to uri="direct:caiso.esb.router.transport.http"/>
+            </when>
+            <when>
+                <simple>${header.caiso.esb.service.app.config.transport} == 'JMS'</simple>
+
+                <bean ref="auditBean" method="logTime('caiso.esb.audit.router.transport.jms.in')"/>
+
+                <wireTap uri="direct:caiso.esb.router.transport.jms.topic"/>
+            </when>
+            <otherwise>
+                <log loggingLevel="ERROR" logName="caiso.esb.router.orderedQ"
+                     message="Error: Unhandled transport type: ${header.caiso.esb.service.app.config.transport} "/>
+                <throwException exceptionType="java.lang.IllegalArgumentException"
+                                message="Unhandled transport: ${header.caiso.esb.service.app.config.transport}"/>
+            </otherwise>
+        </choice>
+
+        <!--
+        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        Exception handling
+        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        -->
+        <onException useOriginalMessage="true">
+            <exception>java.lang.Throwable</exception>
+            <log loggingLevel="ERROR" logName="caiso.esb.router.orderedQ"
+                 message="SOAPAction: ${headers.soapaction} : \n${body}"/>
+
+            <redeliveryPolicy maximumRedeliveries="2"/>
+            <to uri="activemq:queue:exception.caiso.esb.router.orderedQ.Throwable"/>
+        </onException>
+
+    </route>
+
+</routes>
+

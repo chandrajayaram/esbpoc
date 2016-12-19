@@ -1,0 +1,52 @@
+18 Dec 2016 19:33:30,993 | INFO  | Native                                   | Could not load JNR C Library, native system calls through this library will not be available (set this logger level to DEBUG to see the full stack trace).
+18 Dec 2016 19:33:30,994 | INFO  | ClockFactory                             | Using java.lang.System clock to generate timestamps.
+18 Dec 2016 19:33:31,060 | DEBUG | InternalLoggerFactory                    | Using SLF4J as the default logging framework
+18 Dec 2016 19:33:31,075 | DEBUG | PlatformDependent0                       | java.nio.Buffer.address: available
+18 Dec 2016 19:33:31,075 | DEBUG | PlatformDependent0                       | sun.misc.Unsafe.theUnsafe: available
+18 Dec 2016 19:33:31,075 | DEBUG | PlatformDependent0                       | sun.misc.Unsafe.copyMemory: available
+18 Dec 2016 19:33:31,082 | DEBUG | PlatformDependent0                       | java.nio.Bits.unaligned: true
+18 Dec 2016 19:33:31,082 | DEBUG | PlatformDependent0                       | java.nio.DirectByteBuffer.<init>(long, int): available
+18 Dec 2016 19:33:31,085 | DEBUG | PlatformDependent                        | Platform: Windows
+18 Dec 2016 19:33:31,085 | DEBUG | PlatformDependent                        | Java version: 8
+18 Dec 2016 19:33:31,085 | DEBUG | PlatformDependent                        | -Dio.netty.noUnsafe: false
+18 Dec 2016 19:33:31,085 | DEBUG | PlatformDependent                        | sun.misc.Unsafe: available
+18 Dec 2016 19:33:31,086 | DEBUG | PlatformDependent                        | -Dio.netty.noJavassist: false
+18 Dec 2016 19:33:31,086 | DEBUG | PlatformDependent                        | Javassist: unavailable
+18 Dec 2016 19:33:31,087 | DEBUG | PlatformDependent                        | You don't have Javassist in your class path or you don't have enough permission to load dynamically generated classes.  Please check the configuration for better performance.
+18 Dec 2016 19:33:31,087 | DEBUG | PlatformDependent                        | -Dio.netty.tmpdir: C:\Users\Chandra\AppData\Local\Temp (java.io.tmpdir)
+18 Dec 2016 19:33:31,087 | DEBUG | PlatformDependent                        | -Dio.netty.bitMode: 64 (sun.arch.data.model)
+18 Dec 2016 19:33:31,087 | DEBUG | PlatformDependent                        | -Dio.netty.noPreferDirect: false
+18 Dec 2016 19:33:31,087 | DEBUG | PlatformDependent                        | io.netty.maxDirectMemory: 1877475328 bytes
+18 Dec 2016 19:33:31,097 | WARN  | NettyUtil                                | Found Netty's native epoll transport, but not running on linux-based operating system. Using NIO instead.
+18 Dec 2016 19:33:31,101 | DEBUG | MultithreadEventLoopGroup                | -Dio.netty.eventLoopThreads: 8
+18 Dec 2016 19:33:31,110 | DEBUG | NioEventLoop                             | -Dio.netty.noKeySetOptimization: false
+18 Dec 2016 19:33:31,110 | DEBUG | NioEventLoop                             | -Dio.netty.selectorAutoRebuildThreshold: 512
+18 Dec 2016 19:33:31,191 | TRACE | NioEventLoop                             | Instrumented an optimized java.util.Set into: sun.nio.ch.WindowsSelectorImpl@1ca3b418
+18 Dec 2016 19:33:31,194 | TRACE | NioEventLoop                             | Instrumented an optimized java.util.Set into: sun.nio.ch.WindowsSelectorImpl@58cbafc2
+18 Dec 2016 19:33:31,195 | TRACE | NioEventLoop                             | Instrumented an optimized java.util.Set into: sun.nio.ch.WindowsSelectorImpl@2034b64c
+18 Dec 2016 19:33:31,196 | TRACE | NioEventLoop                             | Instrumented an optimized java.util.Set into: sun.nio.ch.WindowsSelectorImpl@75d3a5e0
+18 Dec 2016 19:33:31,197 | TRACE | NioEventLoop                             | Instrumented an optimized java.util.Set into: sun.nio.ch.WindowsSelectorImpl@74d1dc36
+18 Dec 2016 19:33:31,198 | TRACE | NioEventLoop                             | Instrumented an optimized java.util.Set into: sun.nio.ch.WindowsSelectorImpl@7161d8d1
+18 Dec 2016 19:33:31,199 | TRACE | NioEventLoop                             | Instrumented an optimized java.util.Set into: sun.nio.ch.WindowsSelectorImpl@74e28667
+18 Dec 2016 19:33:31,200 | TRACE | NioEventLoop                             | Instrumented an optimized java.util.Set into: sun.nio.ch.WindowsSelectorImpl@1cf6d1be
+18 Dec 2016 19:33:31,206 | DEBUG | ResourceLeakDetector                     | -Dio.netty.leakDetection.level: simple
+18 Dec 2016 19:33:31,206 | DEBUG | ResourceLeakDetector                     | -Dio.netty.leakDetection.maxRecords: 4
+18 Dec 2016 19:33:31,295 | DEBUG | PooledByteBufAllocator                   | -Dio.netty.allocator.numHeapArenas: 8
+18 Dec 2016 19:33:31,296 | DEBUG | PooledByteBufAllocator                   | -Dio.netty.allocator.numDirectArenas: 8
+18 Dec 2016 19:33:31,296 | DEBUG | PooledByteBufAllocator                   | -Dio.netty.allocator.pageSize: 8192
+18 Dec 2016 19:33:31,296 | DEBUG | PooledByteBufAllocator                   | -Dio.netty.allocator.maxOrder: 11
+18 Dec 2016 19:33:31,296 | DEBUG | PooledByteBufAllocator                   | -Dio.netty.allocator.chunkSize: 16777216
+18 Dec 2016 19:33:31,296 | DEBUG | PooledByteBufAllocator                   | -Dio.netty.allocator.tinyCacheSize: 512
+18 Dec 2016 19:33:31,297 | DEBUG | PooledByteBufAllocator                   | -Dio.netty.allocator.smallCacheSize: 256
+18 Dec 2016 19:33:31,297 | DEBUG | PooledByteBufAllocator                   | -Dio.netty.allocator.normalCacheSize: 64
+18 Dec 2016 19:33:31,297 | DEBUG | PooledByteBufAllocator                   | -Dio.netty.allocator.maxCachedBufferCapacity: 32768
+18 Dec 2016 19:33:31,297 | DEBUG | PooledByteBufAllocator                   | -Dio.netty.allocator.cacheTrimInterval: 8192
+18 Dec 2016 19:33:31,322 | DEBUG | ThreadLocalRandom                        | -Dio.netty.initialSeedUniquifier: 0xe005ef2d14454bcd (took 0 ms)
+18 Dec 2016 19:33:31,339 | DEBUG | ByteBufUtil                              | -Dio.netty.allocator.type: unpooled
+18 Dec 2016 19:33:31,339 | DEBUG | ByteBufUtil                              | -Dio.netty.threadLocalDirectBufferSize: 65536
+18 Dec 2016 19:33:31,339 | DEBUG | ByteBufUtil                              | -Dio.netty.maxThreadLocalCharBufferSize: 16384
+18 Dec 2016 19:33:31,369 | DEBUG | Recycler                                 | -Dio.netty.recycler.maxCapacity.default: 262144
+18 Dec 2016 19:33:31,370 | DEBUG | Recycler                                 | -Dio.netty.recycler.linkCapacity: 16
+18 Dec 2016 19:33:31,384 | DEBUG | AbstractByteBuf                          | -Dio.netty.buffer.bytebuf.checkAccessible: true
+18 Dec 2016 19:33:31,568 | INFO  | Cluster                                  | New Cassandra host /127.0.0.1:9042 added
+18 Dec 2016 19:33:31,589 | WARN  | RoundRobinPolicy                         | Detected request at Consistency Level LOCAL_ONE but the non-DC aware RoundRobinPolicy is in use. It is strongly advised to use DCAwareRoundRobinPolicy if you have multiple DCs/use DC-aware consistency levels (note: this message will only be logged once)

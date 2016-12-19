@@ -1,0 +1,158 @@
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# YAML file, with several embedded yaml documents, each representing a
+# different spring profile.  Manually combine profiles by passing to start.sh
+# or in IDE/commandline as in:
+#   -Dspring.profiles.active=localDev,otherProfile
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+application:
+  name: ${project.name}
+  version: ${project.version}
+  buildId: "${project.timestamp} : ${project.builtBy}"
+
+# enable dynamic loading of routes. see http://camel.apache.org/spring-boot.html "Adding XML routes"
+camel:
+  springboot:
+    xmlRoutes: file:camel/*.xml
+
+# HTTP port embedded tomcat listens on
+server:
+  port: 50000
+
+# Spring Actuator/management port
+management:
+  port: 50001
+
+# Auditing settings
+cassandra:
+  port: 9042
+  keyspace: audit_ks
+  consistancylevel: ONE
+  audit.ttl: 172800 # 2 days
+  payload.ttl: 172800 # 2 days
+
+
+--- # New YAML doc starts here
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# profile: maptest-Folsom -  profile used when running on maptest server
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# configures both master and slave servers representing Folsom data center
+spring:
+  profiles: maptest-Folsom
+  activemq:
+    broker-url: failover:(tcp://fqapint503:51616,tcp://fqapint505:51616,tcp://fqapint507:51716,tcp://fqapint509:51716)?randomize=false
+    # NB: for below ${XXXXXXX} values: edit '.profile' file and define these env vars
+    user: "${brokerUserName}"
+    password: "${brokerPassword}"
+
+# Auditing settings
+cassandra:
+  contact-points: fqapint503,fqapint505,fqapint507,fqapint509
+  default-datacenter: Folsom
+  user: caisoesb
+  password: abc123abc
+attachment:
+  path: /mnt/gvol_pay/caiso_esb/service-flow
+
+--- # New YAML doc starts here
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# profile: maptest-Lincoln -  profile used when running on maptest server
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# configures both master and slave servers representing Folsom data center
+spring:
+  profiles: maptest-Lincoln
+  activemq:
+    broker-url: failover:(tcp://fqapint507:51716,tcp://fqapint509:51716,tcp://fqapint503:51716,tcp://fqapint505:51716)?randomize=false
+    # NB: for below ${XXXXXXX} values: edit '.profile' file and define these env vars
+    user: "${brokerUserName}"
+    password: "${brokerPassword}"
+
+# Auditing settings
+cassandra:
+  contact-points: fqapint507,fqapint509,fqapint503,fqapint505
+  default-datacenter: Lincoln
+  user: caisoesb
+  password: abc123abc
+attachment:
+  path: /mnt/gvol_pay/caiso_esb/service-flow
+
+
+--- # New YAML doc starts here
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# profile: dev-Folsom -  profile used when running on Folsom dev server
+#
+# configures both master and slave servers representing Folsom data center
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+spring:
+  profiles: dev-Folsom
+  # ActiveMQ settings
+  activemq:
+    broker-url: failover:(tcp://fdapint475:51616,tcp://fdapjbos431:51616,tcp://fdapint477:51716,tcp://fdapint479:51716)?randomize=false
+    # NB: for below ${XXXXXXX} values: edit '.profile' file and define these env vars
+    user: "${brokerUserName}"
+    password: "${brokerPassword}"
+
+# Auditing settings
+cassandra:
+  contact-points: fdapint475,fdapjbos431,fdapint477,fdapint479
+  default-datacenter: Folsom
+  user: caisoesb
+  password: abc123abc
+attachment:
+  path: /data/esb_gluster/caisoesb/service-flow
+
+
+--- # New YAML doc starts here
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# profile: dev-Lincoln - profile used when running on Lincoln dev server
+#
+# configures both master and slave servers representing Lincoln data center
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+spring:
+  profiles: dev-Lincoln
+  # ActiveMQ settings
+  activemq:
+    broker-url: failover:(tcp://fdapint477:51716,tcp://fdapint479:51716,tcp://fdapint475:51616,tcp://fdapjbos431:51616)?randomize=false
+    # NB: for below ${XXXXXXX} values: edit '.profile' file and define these env vars
+    user: "${brokerUserName}"
+    password: "${brokerPassword}"
+
+# Auditing settings
+cassandra:
+  contact-points: fdapint475,fdapjbos431,fdapint477,fdapint479
+  default-datacenter: Folsom
+  user: caisoesb
+  password: abc123abc
+attachment:
+  path: /data/esb_gluster/caisoesb/service-flow
+
+--- # New YAML doc starts here
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# profile: localDev - local dev : JMS, Auditing
+#
+# used when running locally during dev - both ActiveMQ broker and Cassandra local
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+spring:
+  profiles: localDev
+  # ActiveMQ settings
+  activemq:
+    # local broker
+    broker-url: tcp://localhost:61616
+    # ~~~ running locally, but use dev broker
+#    broker-url: failover:(tcp://fdapint475:51616,tcp://fdapjbos431:51616,tcp://fdapint477:51716,tcp://fdapint479:51716)?randomize=false
+    # NB: for below ${XXXXXXX} values: edit '.profile' file and define these env vars
+    user: "${brokerUserName}"
+    password: "${brokerPassword}"
+
+# Auditing settings
+cassandra:
+  contact-points: localhost
+  default-datacenter: datacenter1
+attachment:
+  path: c:\\temp
+
+--- # New YAML doc starts here
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+#
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+

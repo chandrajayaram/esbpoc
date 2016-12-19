@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- @formatter:off -->
+<Configuration monitorInterval="60" shutdownHook="disable">
+
+    <Properties>
+
+        <Property name="PID">????</Property>
+        <Property name="LOG_EXCEPTION_CONVERSION_WORD">%xwEx</Property>
+        <Property name="LOG_LEVEL_PATTERN">%6.5p</Property>
+        <Property name="LOG_PATTERN">%d{yyyy-MM-dd HH:mm:ss.SSS} ${LOG_LEVEL_PATTERN} ${sys:PID} --- [%15.15t] %-40.40c{1.} : %m%n${sys:LOG_EXCEPTION_CONVERSION_WORD}</Property>
+
+    </Properties>
+
+    <Appenders>
+        <Console name="Console-Appender" target="SYSTEM_OUT">
+            <PatternLayout pattern="${LOG_PATTERN}"/>
+        </Console>
+
+        <RollingFile name="traceFile" fileName="logs/trace.log" filePattern="logs/trace.log.%i.gz">
+            <PatternLayout pattern="%d{dd MMM yyyy HH:mm:ss,SSS} | %-5.5p | %-40.40c{1} | %m%n"/>
+            <Policies>
+                <OnStartupTriggeringPolicy/>
+                <SizeBasedTriggeringPolicy size="10 MB"/>
+            </Policies>
+            <DefaultRolloverStrategy max="10"/>
+        </RollingFile>
+
+        <RollingFile name="errorFile" fileName="logs/errors.log" filePattern="logs/errors-%d{MM-dd-yyyy}.log.%i.gz">
+            <PatternLayout pattern="%d{dd MMM yyyy HH:mm:ss,SSS} | %-5.5p | %-40.40c{1} | %m%n"/>
+            <Policies>
+                <TimeBasedTriggeringPolicy interval="1" modulate="true"/>
+                <SizeBasedTriggeringPolicy size="10 MB"/>
+            </Policies>
+            <DefaultRolloverStrategy max="5"/>
+        </RollingFile>
+
+    </Appenders>
+
+    <Loggers>
+        <!--
+        log4j2 logging level is one of TRACE, DEBUG, INFO, WARN, ERROR, FATAL, OFF
+        -->
+
+        <Logger name="org.springframework" level="INFO"/>
+        <Logger name="org.apache" level="WARN"/>
+        <Logger name="org.hibernate" level="WARN"/>
+        <Logger name="httpclient" level="INFO"/>
+        <Logger name="org.jboss" level="WARN"/>
+        <Logger name="com.datastax" level="INFO"/>
+
+        <Root level="ALL">
+            <AppenderRef ref="Console-Appender" level="DEBUG"/>
+            <AppenderRef ref="traceFile" level="TRACE"/>
+            <AppenderRef ref="errorFile" level="ERROR"/>
+        </Root>
+
+
+    </Loggers>
+</Configuration>

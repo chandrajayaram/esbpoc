@@ -1,0 +1,113 @@
+#!/bin/sh
+
+TITLE="ESB Service Gateway"
+
+DIR=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
+# When this file exists, set its environment variables
+if [ -f $DIR/.profile ] ; then
+    source $DIR/.profile
+fi
+
+service=`basename "$0"`
+
+PROFILE_DIR=$DIR
+PID_FILE="${PROFILE_DIR}/.$SPRING_PROFILE.pid"
+
+status() {
+  if [ -f "${PID_FILE}" ] ; then
+    pid=`cat "${PID_FILE}"`
+    # check to see if it's gone...
+    ps -p ${pid} > /dev/null
+    if [ $? -eq 0 ] ; then
+      return 0
+    else
+      rm "${PID_FILE}"
+      return 3
+    fi
+  fi
+  return 3
+}
+
+stop() {
+  echo "Stopping $TITLE instance..."
+  ${PROFILE_DIR}/stop.sh
+
+  if [ -f "${PID_FILE}" ] ; then
+    pid=`cat "${PID_FILE}"`
+    kill $@ ${pid} > /dev/null
+  fi
+  for i in 1 2 3 4 5 ; do
+    status
+    if [ $? -ne 0 ] ; then
+      return 0
+    fi
+    sleep 1
+  done
+  echo "Could not stop process ${pid}"
+  return 1
+}
+
+start() {
+
+  status
+  if [ $? -eq 0 ] ; then
+    echo "Already running."
+    return 1
+  fi
+
+  echo "Starting $TITLE instance..."
+  nohup ${PROFILE_DIR}/start.sh >/dev/null 2>/dev/null &
+
+  # check to see if stays up...
+  sleep 2
+  status
+  if [ $? -ne 0 ] ; then
+    echo "Could not start $TITLE: ${service}"
+    return 1
+  fi
+  echo "${service} is now running (${pid})"
+  return 0
+}
+
+case $1 in
+  start)
+    echo "Starting ${service}"
+    start
+    exit $?
+  ;;
+
+  force-stop)
+    echo "Forcibly Stopping ${service}"
+    stop -9
+    exit $?
+  ;;
+
+  stop)
+    echo "Gracefully Stopping ${service}"
+    stop
+    exit $?
+  ;;
+
+  restart)
+    echo "Restarting ${service}"
+    stop
+    start
+    exit $?
+  ;;
+
+  status)
+    status
+    rc=$?
+    if [ $rc -eq 0 ] ; then
+      echo "${service} is running (${pid})"
+    else
+      echo "${service} is stopped"
+    fi
+    exit $rc
+  ;;
+
+  *)
+    echo "Usage: $0 {start|stop|restart|force-stop|status}" >&2
+    exit 2
+  ;;
+esac

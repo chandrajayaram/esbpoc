@@ -1,0 +1,127 @@
+<routes xmlns="http://camel.apache.org/schema/spring">
+
+	<!-- ESB Gateway to external clients that send HTTP messages. This simply 
+		takes inbound message and stores it on a persisted "processing queue" for 
+		async handling, and returns to caller immediately after saving on queue -->
+	<route id="gateway.servlet">
+		<from
+			uri="servlet:broadcast?matchOnUriPrefix=true&amp;servletName=CAISOESBServlet" />
+		<transacted />
+		<log loggingLevel="INFO" logName="gateway.servlet"
+			message="SOAPAction: ${headers.soapaction}" />
+		<!-- log receipt time -->
+		<bean ref="auditBean" method="logTime('caiso.esb.audit.gatewayQ.in')" />
+
+		<!-- uncomment to let IDE have breakpoint in CAMEL route and examine exchange -->
+		<!--<bean ref="camelDebugBean" method="noOp"/> -->
+		<!--<bean ref="camelDebugBean" method="simulateDelay(30)"/> -->
+		<!--<bean ref="camelDebugBean" method="simulateCrash(3)"/> -->
+		<!--<bean ref="camelDebugBean" method="exception"/> -->
+
+		<!-- set UUID for this service call -->
+		<bean ref="payloadIdGenerator" method="setPayloadIdHeader" />
+
+		<!-- call to metrics / auditing -->
+		<wireTap uri="direct:gateway.auditGateway" pattern="InOnly" />
+		<choice>
+			<!-- NOTE: if multi-site header doesn't exist, treat it as if it is a 
+				DOR message -->
+			<when>
+				<simple>${header.MULTISITE_CONTEXT} == 'nDOR' </simple>
+				<log loggingLevel="INFO" logName="gateway.servlet"
+					message="${header.MULTISITE_CONTEXT} message received." />
+				<!-- TODO: now what ? -->
+			</when>
+			<otherwise>
+				<!-- Send msg to gateway queue -->
+				<bean ref="auditBean" method="logTime('caiso.esb.audit.gatewayQ.out')" />
+				<to uri="activemq:queue:caiso.esb.gatewayQ" pattern="InOnly" />
+			</otherwise>
+		</choice>
+		<!-- set response based on old format of Sonic response -->
+		<bean ref="gatewayResponseProcessor" />
+
+		<!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ 
+			Exception handling ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
+		<onException useOriginalMessage="true">
+			<exception>java.lang.Throwable</exception>
+			<log loggingLevel="ERROR" logName="gateway.servlet"
+				message="SOAPAction: ${headers.soapaction} : \n${body}" />
+
+			<redeliveryPolicy maximumRedeliveries="2" />
+			<!-- quick & dirty way to copy msg in new, non-transacted thread w/ original 
+				msg body -->
+			<wireTap uri="activemq:queue:exception.caiso.esb.gatewayQ.Throwable"
+				pattern="InOnly" />
+
+			<!-- NOTE: at this point, the exchange body is the exception stack trace 
+				and caller will receive that and HTTP-status 500 as the reply. We could wrap 
+				that up/hide it with something here by changing exchange header and body 
+				as in below: <setHeader headerName="CamelHttpResponseCode"> <simple>550</simple> 
+				</setHeader> <setBody> <simple>xxxx ${exception.stacktrace}</simple> </setBody> -->
+
+		</onException>
+	</route>
+
+	<!-- Route to audit flow / payload in a separate thread -->
+	<route id="gateway.auditGateway">
+		<from uri="direct:gateway.auditGateway" />
+		<log loggingLevel="INFO" logName="gateway.auditGateway"
+			message="SOAPAction: ${headers.soapaction}" />
+
+		<bean ref="gatewayMetrics" method="incInboundCount" />
+		<bean ref="auditDataProcessor" />
+	</route>
+	<!-- Gateway route that takes CAISO Service messages from JMS queue. The 
+		message format is expected to be the raw HTTP message byte[] put onto the 
+		queue by the CAISO ESB Gateway (service-gateway) module. The service configuration 
+		is looked up in .yml file (based on SOAPAction header). From this configuration, 
+		the processing (orchestration of CAISO apps, retries, JMS/HTTP transport, 
+		etc) is done in subsequent routes. -->
+	<route id="router.gateway">
+		<from
+			uri="activemq:queue:caiso.esb.gatewayQ?concurrentConsumers={{activemq_gatewayQ_concurrentConsumers}}&amp;transacted=true" />
+		<transacted />
+		<log loggingLevel="INFO" logName="router.gateway"
+			message="Received SOAPAction: ${headers.soapaction}" />
+		<!-- uncomment to let IDE have breakpoint in CAMEL route and examine exchange -->
+		<!--<bean ref="camelDebugBean" method="noOp"/> -->
+		<!--<bean ref="camelDebugBean" method="simulateDelay(30)"/> -->
+		<!--<bean ref="camelDebugBean" method="simulateCrash(3)"/> -->
+		<!--<bean ref="camelDebugBean" method="exception"/> -->
+
+		<bean ref="auditBean" method="logTime('caiso.esb.audit.router.in')" />
+		<bean ref="routerMetrics" method="incInboundCount" />
+
+		<!-- Lookup config for this SOAP Action -->
+		<bean ref="auditBean" method="logTime('caiso.esb.audit.router.config.search.start')" />
+		<bean ref="configHelper" method="loadServiceConfig" />
+		<bean ref="auditBean" method="logTime('caiso.esb.audit.router.config.search.stop')" />
+
+		<!-- Similar to multicast, but below stores appConfig info in each copy 
+			of the exchange as it produces a new message for each app mapped to this 
+			soap action. From here, new messages will be put on either FastQ or OrderedQ -->
+		<bean ref="serviceRouter" method="multicastToDestinations" />
+
+		<!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ 
+			Exception handling ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
+		<onException>
+			<exception>caiso.esb.exceptions.NoServiceConfiguredException
+			</exception>
+			<log loggingLevel="ERROR" logName="router.gateway"
+				message="No service configured for ${headers.soapaction}" />
+			<!-- route to error queue -->
+			<to
+				uri="activemq:queue:exception.caiso.esb.router.gateway.NoServiceConfiguredException" />
+		</onException>
+		<onException useOriginalMessage="true">
+			<exception>java.lang.Throwable</exception>
+			<log loggingLevel="ERROR" logName="router.gateway"
+				message="SOAPAction: ${headers.soapaction} : \n${body}" />
+
+			<redeliveryPolicy maximumRedeliveries="2" />
+			<to uri="activemq:queue:exception.caiso.esb.router.gateway.Throwable" />
+		</onException>
+
+	</route>
+</routes>
